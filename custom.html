@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QR Generator with Gradient</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #3a0ca3, #4361ee, #4cc9f0);
+      background-size: 400% 400%;
+      animation: gradientMove 15s ease infinite;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    h2 {
+      font-size: 32px;
+      color: #fff;
+      text-shadow: 0 0 5px rgba(255,255,255,0.5);
+    }
+
+    #canvasWrapper {
+      position: relative;
+      width: 500px;
+      height: 500px;
+      margin: 20px auto;
+      background-image: none;
+      /* full base64 string */
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      background-position: center;
+      border: 2px solid #fff;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    #qrContainer {
+      position: absolute;
+      top: 139px !important;
+      left: 154px !important;
+      transform: none !important;
+      width: 192.5px !important;
+      height: 192.5px !important;
+      transition: transform 0.3s ease;
+    }
+
+    #qrContainer.selected {
+      transform: scale(1.02);
+    }
+
+    #qrContainer .resizer {
+      width: 10px;
+      height: 10px;
+      position: absolute;
+      background: white;
+      display: none;
+      border-radius: 50%;
+    }
+
+    .resizer.tl { top: -5px; left: -5px; cursor: nwse-resize; }
+    .resizer.tr { top: -5px; right: -5px; cursor: nesw-resize; }
+    .resizer.bl { bottom: -5px; left: -5px; cursor: nesw-resize; }
+    .resizer.br { bottom: -5px; right: -5px; cursor: nwse-resize; }
+
+    #qrContainer.selected .resizer {
+      display: block;
+    }
+
+    .text-box {
+      position: absolute;
+      left: 20px;
+      width: 90%;
+      text-align: center;
+      border: none;
+      outline: none;
+      color: white;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+      font-family: 'Arial Rounded MT Bold', sans-serif;
+      animation: fadeIn 2s ease;
+    }
+
+    #text1 {
+      bottom: 50px;
+      font-size: 34px;
+      color: gold;
+      font-style: italic;
+    }
+
+    #text2 {
+      bottom: 10px;
+      font-size: 24px;
+      font-style: italic;
+      color: #fff;
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(20px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+
+    input, button {
+      margin: 10px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+    }
+
+    button {
+      background: linear-gradient(45deg, #ff6a00, #ee0979);
+      color: white;
+      font-weight: bold;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(255, 106, 0, 0.3);
+    }
+
+/* Stylish file input wrapper */
+.file-upload-wrapper {
+  display: inline-block;
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  background: linear-gradient(45deg, #ff6a00, #ee0979);
+  box-shadow: 0 4px 15px rgba(255, 106, 0, 0.3);
+  cursor: pointer;
+  font-weight: bold;
+  color: white;
+  padding: 10px 20px;
+  transition: all 0.3s ease;
+}
+
+.file-upload-wrapper:hover {
+  background: linear-gradient(45deg, #ee0979, #ff6a00);
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(255, 106, 0, 0.5);
+}
+
+.file-upload-wrapper input[type="file"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  cursor: pointer;
+  height: 100%;
+  width: 100%;
+}
+
+
+    button:hover {
+      background: linear-gradient(45deg, #ee0979, #ff6a00);
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(255, 106, 0, 0.5);
+    }
+
+    .qr-info {
+      margin-top: 30px;
+      font-size: 18px;
+      font-style: italic;
+      color: #ffe8f0;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+    }
+
+    #qrcode canvas {
+      width: 100% !important;
+      height: 100% !important;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(255,255,255,0.4);
+    }
+  </style>
+</head>
+<body>
+  <h2>QR Code with Gradient</h2>
+  <input type="text" id="qrText" placeholder="Enter UPI ID" />
+  <label class="file-upload-wrapper">
+  Upload Background
+  <input type="file" id="bgUpload" accept="image/*" />
+</label>
+
+
+  <input type="color" id="colorStart" value="#ff0000" />
+  <input type="color" id="colorEnd" value="#0000ff" />
+  <button onclick="generateQR()">Generate QR</button>
+ 
+
+  <div id="canvasWrapper">
+    <div id="qrContainer">
+      <div class="resizer tl"></div>
+      <div class="resizer tr"></div>
+      <div class="resizer bl"></div>
+      <div class="resizer br"></div>
+      <div id="qrcode"></div>
+    </div>
+    <div class="text-box" id="text1" contenteditable="true">Enter Your UPI Name</div>
+    <div class="text-box" id="text2" contenteditable="true">Enter UPI address</div>
+  </div>
+
+  <div class="qr-info">
+    "Your QR, your identity — stylish, smart, and scannable anywhere."
+  </div>
+
+  <script>
+    const qrContainer = document.getElementById("qrContainer");
+    const qrcodeDiv = document.getElementById("qrcode");
+    const canvasWrapper = document.getElementById("canvasWrapper");
+    const upiFirstPart = "upi://pay?pa=";
+    const upiSecondPart = "&pn=&cu=INR";
+
+    function generateQR() {
+      const text = document.getElementById("qrText").value.trim();
+      const colorStart = document.getElementById("colorStart").value;
+      const colorEnd = document.getElementById("colorEnd").value;
+
+      if (!text) return alert("Enter UPI ID");
+
+      const finalText = upiFirstPart + text + upiSecondPart;
+      qrcodeDiv.innerHTML = "";
+
+      const hiddenDiv = document.createElement("div");
+      new QRCode(hiddenDiv, {
+        text: finalText,
+        width: qrContainer.clientWidth,
+        height: qrContainer.clientHeight,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      setTimeout(() => {
+        const qrCanvas = hiddenDiv.querySelector("canvas");
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = qrCanvas.width;
+        tempCanvas.height = qrCanvas.height;
+        const tempCtx = tempCanvas.getContext("2d");
+        tempCtx.drawImage(qrCanvas, 0, 0);
+        const originalData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+
+        const newCanvas = document.createElement("canvas");
+        newCanvas.width = tempCanvas.width;
+        newCanvas.height = tempCanvas.height;
+        const ctx = newCanvas.getContext("2d");
+
+        const gradient = ctx.createLinearGradient(0, 0, newCanvas.width, newCanvas.height);
+        gradient.addColorStop(0, colorStart);
+        gradient.addColorStop(1, colorEnd);
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+
+        const gradientData = ctx.getImageData(0, 0, newCanvas.width, newCanvas.height);
+
+        for (let i = 0; i < originalData.data.length; i += 4) {
+          const isBlack = originalData.data[i] < 128;
+          if (!isBlack) {
+            gradientData.data[i + 3] = 0;
+          }
+        }
+
+        ctx.putImageData(gradientData, 0, 0);
+        qrcodeDiv.innerHTML = "";
+        qrcodeDiv.appendChild(newCanvas);
+        newCanvas.style.width = "100%";
+        newCanvas.style.height = "100%";
+      }, 100);
+    }
+
+    const resizeObserver = new ResizeObserver(() => {
+      if (!document.getElementById("qrText").value) return;
+      generateQR();
+    });
+    resizeObserver.observe(qrContainer);
+
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    qrContainer.addEventListener("mousedown", (e) => {
+      if (e.target.classList.contains("resizer")) return;
+      isDragging = true;
+      offsetX = e.clientX - qrContainer.offsetLeft;
+      offsetY = e.clientY - qrContainer.offsetTop;
+      qrContainer.classList.add("selected");
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      if (!isDragging) return;
+      const rect = canvasWrapper.getBoundingClientRect();
+      let left = e.clientX - offsetX;
+      let top = e.clientY - offsetY;
+
+      if (left < 0) left = 0;
+      if (top < 0) top = 0;
+      if (left + qrContainer.offsetWidth > rect.width) left = rect.width - qrContainer.offsetWidth;
+      if (top + qrContainer.offsetHeight > rect.height) top = rect.height - qrContainer.offsetHeight;
+
+      qrContainer.style.left = left + "px";
+      qrContainer.style.top = top + "px";
+      qrContainer.style.transform = "none";
+    });
+
+    document.addEventListener("mouseup", () => isDragging = false);
+
+    const resizers = document.querySelectorAll(".resizer");
+    let isResizing = false;
+    let currentResizer;
+
+    resizers.forEach(resizer => {
+      resizer.addEventListener("mousedown", (e) => {
+        isResizing = true;
+        currentResizer = resizer;
+        qrContainer.classList.add("selected");
+        e.preventDefault();
+        e.stopPropagation();
+      });
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      if (!isResizing) return;
+      const rect = qrContainer.getBoundingClientRect();
+      let width = rect.width;
+      let height = rect.height;
+      let left = qrContainer.offsetLeft;
+      let top = qrContainer.offsetTop;
+
+      if (currentResizer.classList.contains("br")) {
+        width = e.clientX - rect.left;
+        height = e.clientY - rect.top;
+      } else if (currentResizer.classList.contains("bl")) {
+        width = rect.right - e.clientX;
+        height = e.clientY - rect.top;
+        left = e.clientX - canvasWrapper.getBoundingClientRect().left;
+      } else if (currentResizer.classList.contains("tr")) {
+        width = e.clientX - rect.left;
+        height = rect.bottom - e.clientY;
+        top = e.clientY - canvasWrapper.getBoundingClientRect().top;
+      } else if (currentResizer.classList.contains("tl")) {
+        width = rect.right - e.clientX;
+        height = rect.bottom - e.clientY;
+        left = e.clientX - canvasWrapper.getBoundingClientRect().left;
+        top = e.clientY - canvasWrapper.getBoundingClientRect().top;
+      }
+
+      if (width > 50 && height > 50) {
+        qrContainer.style.width = width + "px";
+        qrContainer.style.height = height + "px";
+        qrContainer.style.left = left + "px";
+        qrContainer.style.top = top + "px";
+        generateQR();
+      }
+    });
+
+    document.addEventListener("mouseup", () => isResizing = false);
+
+    document.addEventListener("mousedown", (e) => {
+      if (!qrContainer.contains(e.target)) {
+        qrContainer.classList.remove("selected");
+      }
+    });
+function downloadCanvas() {
+  // temporarily clone text boxes to ensure their styles get captured
+  const text1 = document.getElementById("text1");
+  const text2 = document.getElementById("text2");
+
+  text1.setAttribute("data-text", text1.innerText);
+  text2.setAttribute("data-text", text2.innerText);
+
+  html2canvas(canvasWrapper, {
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: null,
+    onclone: (clonedDoc) => {
+      const cText1 = clonedDoc.getElementById("text1");
+      const cText2 = clonedDoc.getElementById("text2");
+      cText1.innerText = text1.getAttribute("data-text");
+      cText2.innerText = text2.getAttribute("data-text");
+    }
+  }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = 'custom_qr.png';
+    link.href = canvas.toDataURL();
+    link.click();
+  }).catch(err => console.error("Download failed:", err));
+}
+
+ document.getElementById("bgUpload").addEventListener("change", function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function (event) {
+      const imageUrl = event.target.result;
+      document.getElementById("canvasWrapper").style.backgroundImage = `url('${imageUrl}')`;
+    };
+    reader.readAsDataURL(file);
+  });
+  </script>
+</body>
+</html>
