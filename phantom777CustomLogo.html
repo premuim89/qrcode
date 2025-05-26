@@ -458,31 +458,6 @@ qrContainer.addEventListener('contextmenu', (e) => {
         qrContainer.classList.remove("selected");
       }
     });
-function downloadCanvas() {
-  // temporarily clone text boxes to ensure their styles get captured
-  const text1 = document.getElementById("text1");
-  const text2 = document.getElementById("text2");
-
-  text1.setAttribute("data-text", text1.innerText);
-  text2.setAttribute("data-text", text2.innerText);
-
-  html2canvas(canvasWrapper, {
-    useCORS: true,
-    allowTaint: true,
-    backgroundColor: null,
-    onclone: (clonedDoc) => {
-      const cText1 = clonedDoc.getElementById("text1");
-      const cText2 = clonedDoc.getElementById("text2");
-      cText1.innerText = text1.getAttribute("data-text");
-      cText2.innerText = text2.getAttribute("data-text");
-    }
-  }).then(canvas => {
-    const link = document.createElement('a');
-    link.download = 'custom_qr.png';
-    link.href = canvas.toDataURL();
-    link.click();
-  }).catch(err => console.error("Download failed:", err));
-}
 
 
   function updateBankLogo() {
@@ -503,7 +478,7 @@ function downloadCanvas() {
   const logo = document.getElementById('bankLogo');
   let isDraggingLogo = false; 
   let logoOffsetX, logoOffsetY;
-logo.addEventListener('contextmenu', (e) => {
+  logo.addEventListener('contextmenu', (e) => {
     e.preventDefault(); // Prevents the default right-click menu
 });
 
