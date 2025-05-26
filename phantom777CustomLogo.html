@@ -258,10 +258,10 @@
   <option value="bob.png">Bank of Baroda</option>
   <option value="yes.png">YES Bank</option>
   <option value="cub.png">City Union Bank</option>
-  <option value="mah.jpg">Bank of Maharastra</option>
+  <option value="mah.png">Bank of Maharastra</option>
   <option value="axis.png">Axis Bank</option>
   <option value="idbi.png">IDBI</option>
-  <option value="sbi.jpg">State Bank of India</option>
+  <option value="sbi.png">State Bank of India</option>
   <option value="unity.png">Small Finance Bank-Unity</option>
 
 </select>
@@ -288,14 +288,15 @@
       <div class="resizer br"></div>
       <div id="qrcode"></div>
     </div>
-    <div class="text-box" id="text1" contenteditable="true">Enter Your UPI Name</div>
-    <div class="text-box1" id="text11" contenteditable="true">Enter Bank Name</div>
-    <div class="text-box" id="text2" contenteditable="true">Enter UPI address</div>
+    <div class="text-box" id="text1" spellcheck="false" contenteditable="true">Enter Your UPI Name</div>
+    <div class="text-box1" id="text11" spellcheck="false" contenteditable="true">Enter Bank Name</div>
+    <div class="text-box" id="text2" spellcheck="false" contenteditable="true">Enter UPI address</div>
   </div>
 
   <div class="qr-info">
     "Your QR, your identity — stylish, smart, and scannable anywhere."
   </div>
+<button onclick="downloadCanvas()">Download QR</button>
 
   <script>
     const qrContainer = document.getElementById("qrContainer");
@@ -410,6 +411,10 @@
         e.stopPropagation();
       });
     });
+qrContainer.addEventListener('contextmenu', (e) => {
+    e.preventDefault(); // Prevents the default right-click menu
+});
+
 
     document.addEventListener("mousemove", (e) => {
       if (!isResizing) return;
@@ -496,6 +501,32 @@ function downloadCanvas() {
 
 
   const logo = document.getElementById('bankLogo');
+  let isDraggingLogo = false; 
+  let logoOffsetX, logoOffsetY;
+logo.addEventListener('contextmenu', (e) => {
+    e.preventDefault(); // Prevents the default right-click menu
+});
+
+ logo.addEventListener('touchstart', function(e) {
+  isDraggingLogo = true;
+  const touch = e.touches[0]; // Get the first touch point
+  logoOffsetX = touch.clientX - logo.offsetLeft;
+  logoOffsetY = touch.clientY - logo.offsetTop;
+  e.preventDefault(); // Prevent default touch behaviors like scrolling
+}, { passive: false }); // `passive: false` ensures `preventDefault` works
+
+document.addEventListener('touchmove', function(e) {
+  if (isDraggingLogo) {
+    const touch = e.touches[0]; // Get the first touch point
+    logo.style.left = (touch.clientX - logoOffsetX) + 'px';
+    logo.style.top = (touch.clientY - logoOffsetY) + 'px';
+    e.preventDefault(); // Prevent scrolling while dragging
+  }
+}, { passive: false });
+
+document.addEventListener('touchend', function() {
+  isDraggingLogo = false;
+});
   
   
 
@@ -547,6 +578,45 @@ const bankLogos = {}; // Store base64 image for each bank
     reader.readAsDataURL(logoFile);
   }
 
+
+// Add this function to your existing <script> block.
+// If you already have a downloadCanvas() function, replace it with this one.
+
+function downloadCanvas() {
+  // Temporarily clone text boxes to ensure their styles and current content get captured by html2canvas.
+  const text1 = document.getElementById("text1");
+  const text11 = document.getElementById("text11"); // Get the new text box
+  const text2 = document.getElementById("text2");
+
+  // Save current innerText into a data attribute
+  text1.setAttribute("data-current-text", text1.innerText);
+  text11.setAttribute("data-current-text", text11.innerText); // Save content for text11
+  text2.setAttribute("data-current-text", text2.innerText);
+
+  html2canvas(canvasWrapper, {
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: null, // This ensures transparent background if your wrapper has one
+    onclone: (clonedDoc) => {
+      // In the cloned document, set the innerText from the data attribute
+      const cText1 = clonedDoc.getElementById("text1");
+      const cText11 = clonedDoc.getElementById("text11"); // Get cloned text11
+      const cText2 = clonedDoc.getElementById("text2");
+
+      if (cText1) cText1.innerText = text1.getAttribute("data-current-text");
+      if (cText11) cText11.innerText = text11.getAttribute("data-current-text"); // Set content for cloned text11
+      if (cText2) cText2.innerText = text2.getAttribute("data-current-text");
+    }
+  }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = 'custom_qr_with_info.png'; // Downloaded file name
+    link.href = canvas.toDataURL('image/png'); // Get image data as PNG
+    link.click(); // Trigger the download
+  }).catch(err => {
+    console.error("Oops! Download failed:", err);
+    alert("Could not download the QR image. Please try again.");
+  });
+}
 
 
 </script>
